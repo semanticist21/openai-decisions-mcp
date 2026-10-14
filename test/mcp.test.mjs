@@ -36,3 +36,11 @@ test('packaged stdio process discovers tools without API key and reports missing
   const result=await client.callTool({name:'decide',arguments:{sources:[{type:'file',path:'example.txt'}],questions:[questions[0]]}});
   assert.equal(result.isError,true);assert.match(result.content[0].text,/OPENAI_API_KEY is missing/);assert.equal(stderr,'');
 });
+
+test('PDF workers do not inherit parent --input-type flags', async()=>{
+  const { promisify }=await import('node:util');
+  const { execFile }=await import('node:child_process');
+  const source=`import {renderPdf} from ${JSON.stringify(pathToFileURL(path.resolve('dist/input.js')).href)}; import {pdfFixture} from ${JSON.stringify(pathToFileURL(path.resolve('test/helpers.mjs')).href)}; const r=await renderPdf(pdfFixture(),undefined,'auto',AbortSignal.timeout(10000)); if(r.modes.join(',')!=='text,image')throw Error('bad PDF modes'); console.log('PASS');`;
+  const result=await promisify(execFile)(process.execPath,['--input-type=module','-e',source]);
+  assert.equal(result.stdout.trim(),'PASS');
+});

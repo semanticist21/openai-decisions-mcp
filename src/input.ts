@@ -109,7 +109,7 @@ interface PdfResult { parts: DecisionInputPart[]; pages: number[]; totalPages: n
 export function renderPdf(data: Buffer, pages: number[] | undefined, mode: string, signal: AbortSignal): Promise<PdfResult> {
   signal.throwIfAborted();
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL('./pdf-worker.js', import.meta.url), { workerData: { data, pages, mode }, resourceLimits: { maxOldGenerationSizeMb: 256 }, stdout: true, stderr: true });
+    const worker = new Worker(new URL('./pdf-worker.js', import.meta.url), { execArgv: [], workerData: { data, pages, mode }, resourceLimits: { maxOldGenerationSizeMb: 256 }, stdout: true, stderr: true });
     // PDF.js diagnostics may contain document content; never forward worker output.
     worker.stdout.resume(); worker.stderr.resume();
     const stop = () => { void worker.terminate(); reject(signal.reason); };
