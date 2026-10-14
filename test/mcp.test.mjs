@@ -35,7 +35,7 @@ test("real MCP exchanges discover tools, evaluate, reject schemas, and track Roo
   await client.connect(ct);
   assert.deepEqual(
     (await client.listTools()).tools.map((t) => t.name),
-    ["decide", "evaluate_batch"],
+    ["decide", "evaluate_batch", "find_code"],
   );
   const args = { sources: [{ type: "file", path: "example.txt" }], questions };
   const result = await client.callTool({ name: "decide", arguments: args });
@@ -65,6 +65,9 @@ test("real MCP exchanges discover tools, evaluate, reject schemas, and track Roo
     },
   });
   assert.equal(JSON.parse(batch.content[0].text).items[0].ok, true);
+  const found = await client.callTool({ name: "find_code", arguments: { files: [{ path: "example.txt" }], query: "Does the code handle login?" } });
+  assert.notEqual(found.isError, true);
+  assert.equal(JSON.parse(found.content[0].text).chunks[0].start_line, 1);
 });
 
 test("packaged stdio process discovers tools without API key and reports missing key", async (t) => {
@@ -86,7 +89,7 @@ test("packaged stdio process discovers tools without API key and reports missing
     await rm(root, { recursive: true });
   });
   await client.connect(transport);
-  assert.equal((await client.listTools()).tools.length, 2);
+  assert.equal((await client.listTools()).tools.length, 3);
   const result = await client.callTool({
     name: "decide",
     arguments: {

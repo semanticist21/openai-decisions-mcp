@@ -234,7 +234,7 @@ export class Evaluator {
       parentSignal,
       AbortSignal.timeout(120_000),
     ]);
-    const results: unknown[] = new Array(input.items.length);
+    const results: ({ id: string; ok: true; result: Awaited<ReturnType<Evaluator["decide"]>> } | { id: string; ok: false; error: string })[] = new Array(input.items.length);
     let next = 0;
     await Promise.all(
       Array.from(

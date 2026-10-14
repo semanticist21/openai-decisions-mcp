@@ -128,6 +128,16 @@ export const batchShape = {
   full: z.boolean().default(false),
 };
 export const batchSchema = z.object(batchShape).strict();
+export const findShape = {
+  files: z.array(z.object({
+    ...fileFields,
+    start_line: z.number().int().positive().optional(),
+    end_line: z.number().int().positive().optional(),
+  }).strict()).min(1).max(20),
+  query: instructions.describe("Self-contained question about the code to locate."),
+};
+export const findSchema = z.object(findShape).strict();
+export type FindInput = z.infer<typeof findSchema>;
 export type Source = z.infer<typeof sourceSchema>;
 export type Question = z.infer<typeof questionSchema>;
 export type DecideInput = z.infer<typeof decideSchema>;
