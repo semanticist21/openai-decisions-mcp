@@ -27,7 +27,7 @@ export async function createServer(
   await access.initialize();
   const evaluator = new Evaluator(access, options.provider);
   const server = new McpServer(
-    { name: "openai-decisions-mcp", version: "0.2.0" },
+    { name: "openai-decisions-mcp", version: "0.2.1" },
     {
       instructions:
         "Evaluate supplied evidence with OpenAI Decisions. Choose questions and actions yourself. Use file paths to avoid copying long inputs. No file writes or action execution. Probabilities are judgments, not factual proof or authorization.",

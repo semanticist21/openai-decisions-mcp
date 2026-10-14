@@ -1,6 +1,6 @@
 {
   "name": "openai-decisions-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Local MCP tools for OpenAI Decisions: text, files, images and PDFs.",
   "type": "module",
   "license": "MIT",

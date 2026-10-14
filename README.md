@@ -17,7 +17,7 @@ Restart the client session after registration. Install the bundled `skills/opena
 
 ## Tools
 
-`decide({sources,questions,full?})` evaluates shared evidence against independent questions. `evaluate_batch({items:[{id,sources}],questions,full?})` applies the same questions independently to up to 20 items. Each valid item makes one paid request; up to 3 evaluations run concurrently per server process. No automatic retries or successful-item replay.
+`decide({sources,questions,full?})` evaluates shared evidence against independent questions. `evaluate_batch({items:[{id,sources}],questions,full?})` applies the same questions independently to up to 20 items. Each valid item makes one paid request; up to 3 evaluations run concurrently per server process. No automatic retries or successful-item replay. Top-level array arguments also accept a JSON-encoded array string for client compatibility; both forms receive identical validation. Missing questions or evidence remain errors.
 
 ```json
 {"sources":[{"type":"file","path":"src/auth.ts"}],"questions":[{"name":"relevant","type":"predicate","instructions":"Does this source implement login or session validation?"}]}

@@ -99,6 +99,15 @@ test("packaged stdio process discovers tools without API key and reports missing
   });
   assert.equal(result.isError, true);
   assert.match(result.content[0].text, /OPENAI_API_KEY is missing/);
+  const encoded = await client.callTool({
+    name: "evaluate_batch",
+    arguments: {
+      items: JSON.stringify([{ id: "encoded", sources: [{ type: "text", text: "unchanged" }] }]),
+      questions: JSON.stringify([questions[0]]),
+    },
+  });
+  assert.notEqual(encoded.isError, true);
+  assert.match(JSON.parse(encoded.content[0].text).items[0].error, /OPENAI_API_KEY is missing/);
   assert.equal(stderr, "");
 });
 

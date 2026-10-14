@@ -109,31 +109,57 @@ export const sourceSchema = z.discriminatedUnion("type", [
     .strict(),
 ]);
 export const sourcesSchema = z.array(sourceSchema).min(1).max(20);
+// Some MCP clients encode top-level arrays as JSON strings. Decode once at the boundary.
+function jsonArray<T extends z.ZodType>(schema: T) {
+  return z.union([
+    schema,
+    z.string().max(limits.requestBytes).transform((value, ctx) => {
+      if (Buffer.byteLength(value) > limits.requestBytes) {
+        ctx.addIssue({ code: "custom", message: "JSON array exceeds 24 MiB." });
+        return z.NEVER;
+      }
+      let decoded: unknown;
+      try {
+        decoded = JSON.parse(value);
+      } catch {
+        ctx.addIssue({ code: "custom", message: "Expected an array or a valid JSON-encoded array." });
+        return z.NEVER;
+      }
+      const result = schema.safeParse(decoded);
+      if (!result.success) {
+        for (const issue of result.error.issues)
+          ctx.addIssue({ code: "custom", path: issue.path, message: issue.message });
+        return z.NEVER;
+      }
+      return result.data;
+    }),
+  ]).describe("Prefer a native JSON array. A JSON-encoded array string is also accepted for client compatibility; identical validation applies.");
+}
 export const decideShape = {
-  sources: sourcesSchema,
-  questions: questionsSchema,
+  sources: jsonArray(sourcesSchema),
+  questions: jsonArray(questionsSchema),
   full: z.boolean().default(false),
 };
 export const decideSchema = z.object(decideShape).strict();
 export const batchShape = {
-  items: z
+  items: jsonArray(z
     .array(z.object({ id: name, sources: sourcesSchema }).strict())
     .min(1)
     .max(limits.batch)
     .refine(
       (v) => new Set(v.map((x) => x.id)).size === v.length,
       "Item IDs must be unique",
-    ),
-  questions: questionsSchema,
+    )),
+  questions: jsonArray(questionsSchema),
   full: z.boolean().default(false),
 };
 export const batchSchema = z.object(batchShape).strict();
 export const findShape = {
-  files: z.array(z.object({
+  files: jsonArray(z.array(z.object({
     ...fileFields,
     start_line: z.number().int().positive().optional(),
     end_line: z.number().int().positive().optional(),
-  }).strict()).min(1).max(20),
+  }).strict()).min(1).max(20)),
   query: instructions.describe("Self-contained question about the code to locate."),
 };
 export const findSchema = z.object(findShape).strict();

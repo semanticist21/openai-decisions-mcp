@@ -18,7 +18,7 @@ try {
     console.log(
       "openai-decisions-mcp [--root PATH] [--allow-root PATH ...] [--env-file PATH]\nLocal stdio MCP. Reads current project via client Roots, CLAUDE_PROJECT_DIR, or cwd.\nRequires OPENAI_API_KEY for evaluation. No OAuth. See README for limits.",
     );
-  } else if (values.version) console.log("0.2.0");
+  } else if (values.version) console.log("0.2.1");
   else {
     if (values["env-file"]) loadEnvFile(values["env-file"]);
     const server = await createServer({
