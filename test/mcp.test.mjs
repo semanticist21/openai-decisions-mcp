@@ -16,8 +16,9 @@ test('real MCP exchanges discover tools, evaluate, reject schemas, and track Roo
   const server=await createServer({root:a,provider:async body=>decision(body)});
   const client=new Client({name:'test',version:'1'},{capabilities:{roots:{listChanged:true}}});
   client.setRequestHandler(ListRootsRequestSchema,()=>({roots}));
-  const [ct,st]=InMemoryTransport.createLinkedPair();await server.connect(st);await client.connect(ct);
+  const [ct,st]=InMemoryTransport.createLinkedPair();
   t.after(async()=>{await client.close();await server.close();});
+  await server.connect(st);await client.connect(ct);
   assert.deepEqual((await client.listTools()).tools.map(t=>t.name),['decide','evaluate_batch']);
   const args={sources:[{type:'file',path:'example.txt'}],questions};
   const result=await client.callTool({name:'decide',arguments:args});assert.notEqual(result.isError,true);assert.equal(JSON.parse(result.content[0].text).answers.length,3);
@@ -31,7 +32,7 @@ test('packaged stdio process discovers tools without API key and reports missing
   const root=await fixture();t.after(()=>rm(root,{recursive:true}));
   const transport=new StdioClientTransport({command:process.execPath,args:[path.resolve('dist/cli.js')],cwd:root,env:{PATH:process.env.PATH,HOME:process.env.HOME},stderr:'pipe'});
   let stderr='';transport.stderr?.on('data',x=>{stderr+=x;});
-  const client=new Client({name:'stdio-test',version:'1'});await client.connect(transport);t.after(()=>client.close());
+  const client=new Client({name:'stdio-test',version:'1'});t.after(()=>client.close());await client.connect(transport);
   assert.equal((await client.listTools()).tools.length,2);
   const result=await client.callTool({name:'decide',arguments:{sources:[{type:'file',path:'example.txt'}],questions:[questions[0]]}});
   assert.equal(result.isError,true);assert.match(result.content[0].text,/OPENAI_API_KEY is missing/);assert.equal(stderr,'');

@@ -23,7 +23,7 @@
   "scripts": {
     "build": "tsc",
     "check": "tsc --noEmit",
-    "test": "npm run build && node --test test/*.test.mjs",
+    "test": "npm run build && node --test --test-timeout=30000 test/*.test.mjs",
     "prepack": "npm run build",
     "smoke": "node scripts/smoke.mjs",
     "benchmark": "node scripts/benchmark.mjs"
