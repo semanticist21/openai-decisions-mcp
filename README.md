@@ -4,7 +4,7 @@ Local MCP tools for OpenAI's Decisions API: classify, filter, and score text, pr
 
 ## Install
 
-Requires Node.js 22.13+ (Node 24 recommended). npm distribution: `npx -y openai-decisions-mcp`. Until the first npm release, clone this repository, run `npm ci && npm run build`, and use `node /absolute/path/openai-decisions-mcp/dist/cli.js` instead.
+Requires Node.js 22.13+ (Node 24 recommended). npm distribution: `npx -y openai-decisions-mcp`. Alternatively, clone this repository, run `npm ci && npm run build`, and use `node /absolute/path/openai-decisions-mcp/dist/cli.js` instead.
 
 Supply `OPENAI_API_KEY` through the server environment, or put it in a private environment file outside the repository (Unix: `chmod 600`) and pass `--env-file /absolute/path/credentials.env`. ChatGPT OAuth/subscriptions are not used. The server never reads other apps' credentials.
 
