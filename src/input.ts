@@ -24,7 +24,7 @@ export class FileAccess {
       uris.map((uri) => realpath(fileURLToPath(uri))),
     );
   }
-  async read(source: Exclude<Source, { type: "text" }>) {
+  private async resolve(source: { path: string; root?: string }) {
     const roots = [...this.projectRoots, ...this.extras];
     if (!roots.length)
       throw new InputError(
@@ -60,6 +60,16 @@ export class FileAccess {
       throw new InputError(
         "File is outside the current project and additional allowed roots.",
       );
+    return { candidate, resolved };
+  }
+  async directory(path = ".") {
+    const { resolved } = await this.resolve({ path });
+    if (!(await stat(resolved)).isDirectory())
+      throw new InputError("Search root must be a directory.");
+    return resolved;
+  }
+  async read(source: Exclude<Source, { type: "text" }>) {
+    const { candidate, resolved } = await this.resolve(source);
     const handle = await open(
       resolved,
       constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,

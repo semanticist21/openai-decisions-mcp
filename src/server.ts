@@ -18,6 +18,7 @@ export async function createServer(
     root?: string;
     additionalRoots?: string[];
     provider?: DecisionProvider;
+    local?: boolean;
   } = {},
 ) {
   const access = new FileAccess(
@@ -27,10 +28,11 @@ export async function createServer(
   await access.initialize();
   const evaluator = new Evaluator(access, options.provider);
   const server = new McpServer(
-    { name: "openai-decisions-mcp", version: "0.2.1" },
+    { name: options.local ? "local-decisions" : "openai-decisions-mcp", version: "0.2.1" },
     {
-      instructions:
-        "Evaluate supplied evidence with OpenAI Decisions. Choose questions and actions yourself. Use file paths to avoid copying long inputs. No file writes or action execution. Probabilities are judgments, not factual proof or authorization.",
+      instructions: options.local
+        ? "Use D3 Flash on this machine or a configured private SSH tunnel for scoped search, typed decisions, and read-only browser QA. Verify the returned evidence."
+        : "Evaluate supplied evidence with OpenAI Decisions. Choose questions and actions yourself. Use file paths to avoid copying long inputs. No file writes or action execution. Probabilities are judgments, not factual proof or authorization.",
     },
   );
   let rootsReady: Promise<void> = Promise.resolve();
@@ -61,6 +63,38 @@ export async function createServer(
       if (server.server.getClientCapabilities()?.roots) refreshRoots();
     },
   );
+  if (options.local) {
+    const { localTools, grepShape, browseShape } = await import("./local-tools.js");
+    const local = localTools(access);
+    const localHandler = (run: (args: unknown, signal: AbortSignal) => Promise<unknown>) =>
+      async (args: unknown, extra: { signal: AbortSignal }) => {
+        try {
+          await rootsReady;
+          const result = await run(args, extra.signal);
+          return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+        } catch (error) {
+          return { isError: true, content: [{ type: "text" as const, text: safeError(error) }] };
+        }
+      };
+    const annotations = { readOnlyHint: true, destructiveHint: false, openWorldHint: true };
+    server.registerTool("grep", {
+      description: "Find where a behavior is implemented within a project subtree or specified file ranges. Scope the search tightly. Verify returned locations in the source.",
+      inputSchema: grepShape, annotations,
+    }, localHandler(local.grep));
+    server.registerTool("decide", {
+      description: "Apply typed questions to text, files, images or PDF pages using D3 Flash.",
+      inputSchema: decideShape, annotations,
+    }, localHandler(local.decide));
+    server.registerTool("batch", {
+      description: "Apply common typed questions to independent inputs. Returns per-item results and errors in order.",
+      inputSchema: batchShape, annotations,
+    }, localHandler(local.batch));
+    server.registerTool("browse", {
+      description: "Run read-only QA on an approved site. Navigation and resources are limited to the starting origin.",
+      inputSchema: browseShape, annotations,
+    }, localHandler(local.browse));
+    return server;
+  }
   server.registerTool(
     "decide",
     {

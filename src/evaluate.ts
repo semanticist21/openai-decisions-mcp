@@ -47,6 +47,7 @@ const answerSchema = z.discriminatedUnion("type", [
 ]);
 const responseSchema = z.object({
   model: z.string().min(1),
+  route: z.enum(["local", "mac-mini", "fedora"]).optional(),
   answers: z.array(answerSchema).max(100),
   usage: z.object({
     input_tokens: count,
@@ -59,18 +60,19 @@ const responseSchema = z.object({
     output_tokens_details: z.object({ reasoning_tokens: count }),
   }),
 });
-export function validateDecision(raw: unknown, questions: Question[]) {
+export function validateDecision(raw: unknown, questions: Question[], model = "gpt-6-luna") {
+  const providerName = model === "gpt-6-luna" ? "OpenAI" : "D3 Flash";
   const parsed = responseSchema.safeParse(raw);
   if (!parsed.success)
     throw new InputError(
-      "OpenAI returned a malformed decision. No result was accepted.",
+      `${providerName} returned a malformed decision. No result was accepted.`,
     );
   const result = parsed.data;
   if (
-    result.model !== "gpt-6-luna" ||
+    result.model !== model ||
     result.answers.length !== questions.length
   )
-    throw new InputError("OpenAI returned a mismatched model or answer count.");
+    throw new InputError(`${providerName} returned a mismatched model or answer count.`);
   for (const [i, question] of questions.entries()) {
     const answer = result.answers[i]!;
     if (
@@ -78,7 +80,7 @@ export function validateDecision(raw: unknown, questions: Question[]) {
       (answer.type !== "refusal" && answer.type !== question.type)
     )
       throw new InputError(
-        "OpenAI returned a mismatched question name or type.",
+        `${providerName} returned a mismatched question name or type.`,
       );
     if (answer.type === "choice" && question.type === "choice") {
       const expected = new Set(
@@ -91,7 +93,7 @@ export function validateDecision(raw: unknown, questions: Question[]) {
         new Set(actual).size !== expected.size ||
         actual.some((x) => !expected.has(x))
       )
-        throw new InputError("OpenAI returned invalid choice values.");
+        throw new InputError(`${providerName} returned invalid choice values.`);
     }
     if (answer.type === "score" && question.type === "score") {
       if (
@@ -104,7 +106,7 @@ export function validateDecision(raw: unknown, questions: Question[]) {
           (p) => question.levels[p.value]?.label !== p.label,
         )
       )
-        throw new InputError("OpenAI returned invalid score levels.");
+        throw new InputError(`${providerName} returned invalid score levels.`);
     }
     if (
       "probabilities" in answer &&
@@ -113,7 +115,7 @@ export function validateDecision(raw: unknown, questions: Question[]) {
       ) > 0.01
     )
       throw new InputError(
-        "OpenAI returned an invalid probability distribution.",
+        `${providerName} returned an invalid probability distribution.`,
       );
   }
   return result;
@@ -158,6 +160,7 @@ export class Evaluator {
   constructor(
     private readonly access: FileAccess,
     private readonly provider: DecisionProvider = callOpenAI,
+    private readonly model = "gpt-6-luna",
   ) {}
   async decide(input: DecideInput, parentSignal: AbortSignal) {
     const signal = AbortSignal.any([
@@ -187,7 +190,7 @@ export class Evaluator {
       signal.throwIfAborted();
       const prepared = await prepareInput(input.sources, this.access, signal);
       const body = {
-        model: "gpt-6-luna",
+        model: this.model,
         input: prepared.input,
         questions: input.questions,
       };
@@ -199,7 +202,7 @@ export class Evaluator {
       const started = performance.now();
       const raw = await this.provider(body, signal);
       signal.throwIfAborted();
-      const response = validateDecision(raw, input.questions);
+      const response = validateDecision(raw, input.questions, this.model);
       const answers = input.full
         ? response.answers
         : response.answers.map((answer) => {
@@ -218,6 +221,7 @@ export class Evaluator {
           };
       return {
         model: response.model,
+        ...(response.route ? { route: response.route } : {}),
         answers,
         usage,
         coverage: prepared.coverage,

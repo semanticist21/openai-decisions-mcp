@@ -9,7 +9,8 @@
     "url": "git+https://github.com/semanticist21/openai-decisions-mcp.git"
   },
   "bin": {
-    "openai-decisions-mcp": "dist/cli.js"
+    "openai-decisions-mcp": "dist/cli.js",
+    "local-decisions": "dist/local-cli.js"
   },
   "files": [
     "dist",
@@ -29,10 +30,13 @@
     "benchmark": "node scripts/benchmark.mjs"
   },
   "dependencies": {
+    "@dzhng/jevgrep": "0.8.5",
+    "@jkudish/jev-browser": "0.8.12",
     "@modelcontextprotocol/sdk": "1.32.1",
     "@napi-rs/canvas": "1.0.11",
     "openai": "7.32.0",
     "pdfjs-dist": "6.4.299",
+    "playwright": "1.65.1",
     "zod": "4.6.7"
   },
   "devDependencies": {

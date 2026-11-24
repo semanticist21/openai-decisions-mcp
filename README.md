@@ -2,6 +2,21 @@
 
 Local MCP tools for OpenAI's Decisions API: classify, filter, and score text, project files, images, and PDF pages. Independent community project; not affiliated with OpenAI. MIT licensed.
 
+## Local Decisions
+
+The same package provides a separate `local-decisions` CLI and MCP server for D3 Flash. After `npm ci` and `npm run build`, run `node dist/local-cli.js --help`, or install the package to get the CLI on PATH. Register `local-decisions mcp` as a stdio server to discover `grep`, `decide`, `batch`, and `browse`. For browser QA install Chromium with `npx playwright install chromium` from this checkout.
+
+```sh
+local-decisions doctor
+local-decisions grep "Where is the retry delay computed?" src/
+local-decisions decide --input questions.json
+local-decisions browse https://example.com/ "Confirm that the heading is Example Domain."
+```
+
+The endpoint defaults to `http://127.0.0.1:8091`, with the server alias `d3-flash`. Configure `LOCAL_DECISIONS_URL`, `LOCAL_DECISIONS_MAC_URL`, and `LOCAL_DECISIONS_FEDORA_URL` in `~/.config/local-decisions/env` or provide `--env-file`. Endpoints are loopback addresses, including tunnels to registered machines. Confirm that all configured routes may receive the selected evidence. Set the remote URL variables to empty strings for machine-local evidence. Mac mini is the first remote fallback. Fedora is eligible for short single-question text only. Local Decisions makes no requests to OpenAI.
+
+For browser QA, start at the final URL of an approved page. The browser only permits same-origin GET and HEAD requests and blocks redirects. Optional typing requires a separate loopback OpenAI-compatible model configured through `JEV_BROWSER_TYPE_BASE_URL` and `JEV_BROWSER_TYPE_MODEL`.
+
 ## Install
 
 Requires Node.js 22.13+ (Node 24 recommended). npm distribution: `npx -y openai-decisions-mcp`. Alternatively, clone this repository, run `npm ci && npm run build`, and use `node /absolute/path/openai-decisions-mcp/dist/cli.js` instead.
