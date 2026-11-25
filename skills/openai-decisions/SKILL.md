@@ -18,5 +18,6 @@ Use `decide` for several independent questions about shared evidence. Use `evalu
 - Use explicit categories and observable rubric levels. Include an insufficient-evidence/other choice when appropriate. Model confidence is not factual proof; calibrate any thresholds against labeled examples.
 - Use code for exact calculations and deterministic rules. Keep open-ended reasoning, explanations, edits, and action execution with the calling agent. These judgments never grant authorization.
 - Calls send selected content to OpenAI and use a separate API key; ChatGPT subscriptions are not used. Keys belong in protected environment configuration, never tool arguments.
+- Use the configured API credential through this MCP for `/v1/decisions` only. Do not read or reuse it for model discovery, Chat Completions, Responses, or as a fallback for another tool.
 
 Token savings depend on what work is displaced. Avoid asking the main model to read, reproduce, and judge the same input before delegating it. This tool does not itself guarantee savings or replace tests.
